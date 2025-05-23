@@ -1,0 +1,21 @@
+`timescale 1ns / 1ps
+module tgc_module(
+    input wire clk,
+    input wire rst,
+    input wire [11:0] adc_in,
+    output reg [15:0] tgc_out
+);
+
+    reg [15:0] gain;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            gain <= 16'd1;
+            tgc_out <= 0;
+        end else begin
+            gain <= gain + 1; // Linearly increase gain over time
+            tgc_out <= adc_in * gain[7:0];
+        end
+    end
+
+endmodule
