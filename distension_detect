@@ -1,0 +1,32 @@
+`timescale 1ns / 1ps
+module distension_detect (
+    input clk,
+    input reset,
+    input [15:0] current_diameter,     // e.g., measured in arbitrary units
+    input [15:0] baseline_diameter,    // baseline/reference value
+    output reg distension_flag         // 1 when distension is detected
+);
+
+parameter THRESHOLD = 16'd10; // Set based on system calibration
+
+reg [15:0] diameter_diff;
+
+always @(posedge clk or posedge reset) begin
+    if (reset) begin
+        distension_flag <= 0;
+        diameter_diff <= 0;
+    end else begin
+        if (current_diameter > baseline_diameter)
+            diameter_diff <= current_diameter - baseline_diameter;
+        else
+            diameter_diff <= baseline_diameter - current_diameter;
+
+        // Flag distension if difference exceeds threshold
+        if (diameter_diff > THRESHOLD)
+            distension_flag <= 1;
+        else
+            distension_flag <= 0;
+    end
+end
+
+endmodule
