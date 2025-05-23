@@ -1,0 +1,60 @@
+`timescale 1ns / 1ps
+module fsm_controller(
+    input wire clk,
+    input wire rst,
+    input wire probe_stable,   // From SVM output (1 if stable)
+    input wire wall_detected,  // From SVM output (1 if walls detected)
+    output reg [2:0] state     // Current state output
+);
+
+    // Define FSM states
+    parameter IDLE        = 3'd0,
+              STABILIZE   = 3'd1,
+              DETECT_WALL = 3'd2,
+              MONITOR_DIST= 3'd3,
+              MEASURE_VELO= 3'd4;
+
+    reg [2:0] next_state;
+
+    // State transition logic
+    always @(posedge clk or posedge rst) begin
+        if (rst)
+            state <= IDLE;
+        else
+            state <= next_state;
+    end
+
+    // Next state decision logic
+    always @(*) begin
+        case (state)
+            IDLE: begin
+                next_state = STABILIZE;
+            end
+
+            STABILIZE: begin
+                if (probe_stable)
+                    next_state = DETECT_WALL;
+                else
+                    next_state = STABILIZE;
+            end
+
+            DETECT_WALL: begin
+                if (wall_detected)
+                    next_state = MONITOR_DIST;
+                else
+                    next_state = DETECT_WALL;
+            end
+
+            MONITOR_DIST: begin
+                next_state = MEASURE_VELO;
+            end
+
+            MEASURE_VELO: begin
+                next_state = STABILIZE; // After velocity calculation, go back
+            end
+
+            default: next_state = IDLE;
+        endcase
+    end
+
+endmodule
