@@ -1,0 +1,22 @@
+`timescale 1ns / 1ps
+module velocity_calc(
+    input wire clk,
+    input wire rst,
+    input wire [15:0] doppler_freq, // Frequency shift
+    output reg [15:0] velocity      // cm/s
+);
+
+    parameter C = 154000; // Speed of sound in cm/s
+    parameter F0 = 5000000; // Ultrasound center frequency (5 MHz)
+    parameter COS_THETA = 8'd64; // cos(?) ~ 0.5 (fixed point 64/128)
+
+      always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            velocity <= 0;
+        end else begin
+            velocity <= (doppler_freq * 2406) / 10000;
+        end
+    end
+
+
+endmodule
