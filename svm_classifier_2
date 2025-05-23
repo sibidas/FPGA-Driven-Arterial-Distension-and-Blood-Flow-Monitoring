@@ -1,0 +1,25 @@
+`timescale 1ns / 1ps
+module svm_classifier_2 (
+    input wire clk,
+    input wire rst,
+    input wire [15:0] feature_vector, // e.g., Doppler-based input
+    output reg class_out             // 1: Artery, 0: Vein
+);
+
+    // Example parameters for second SVM - modify as per training
+    parameter signed [15:0] weight = 16'sd25;   // Example weight
+    parameter signed [15:0] bias   = -16'sd100; // Example bias
+
+    reg signed [31:0] result;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            class_out <= 0;
+        end else begin
+            // Simple linear classification: result = feature * weight + bias
+            result <= (feature_vector * weight) + bias;
+            class_out <= (result >= 0) ? 1'b1 : 1'b0;
+        end
+    end
+
+endmodule
