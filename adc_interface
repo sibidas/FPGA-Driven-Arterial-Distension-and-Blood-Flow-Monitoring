@@ -1,0 +1,27 @@
+`timescale 1ns / 1ps
+module adc_interface (
+    input wire clk,
+    input wire rst,
+    output reg [11:0] echo_signal   // 12-bit simulated ADC output
+);
+
+    reg [15:0] counter;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            counter <= 0;
+            echo_signal <= 0;
+        end else begin
+            counter <= counter + 1;
+
+            // Generate synthetic echo waveform (pulse train)
+            if (counter[9:0] < 100)
+                echo_signal <= 12'd1800;     // High pulse (mimics echo return)
+            else if (counter[9:0] < 150)
+                echo_signal <= 12'd1000;     // Mid level
+            else
+                echo_signal <= 12'd500;      // Background noise
+        end
+    end
+
+endmodule
