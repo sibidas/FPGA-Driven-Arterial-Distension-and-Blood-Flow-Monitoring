@@ -1,0 +1,29 @@
+`timescale 1ns / 1ps
+module conv_pool(
+    input wire clk,
+    input wire rst,
+    input wire [15:0] signal_in,
+    output reg [15:0] pooled_out
+);
+
+    reg [15:0] conv_sum;
+    reg [3:0] sample_count;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            conv_sum <= 0;
+            sample_count <= 0;
+            pooled_out <= 0;
+        end else begin
+            conv_sum <= conv_sum + signal_in;
+            sample_count <= sample_count + 1;
+
+            if (sample_count == 4) begin
+                pooled_out <= conv_sum >> 2; // Simple 4-point pooling
+                conv_sum <= 0;
+                sample_count <= 0;
+            end
+        end
+    end
+
+endmodule
