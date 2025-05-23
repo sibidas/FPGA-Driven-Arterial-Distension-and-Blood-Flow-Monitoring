@@ -1,0 +1,12 @@
+## Clock signal
+set_property -dict { PACKAGE_PIN E3    IOSTANDARD LVCMOS33 } [get_ports { clk }];
+create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports { clk }];
+
+## Reset button (btn0)
+set_property PACKAGE_PIN D9 [get_ports rst];
+set_property IOSTANDARD LVCMOS33 [get_ports rst];
+
+## UART TX pin
+set_property PACKAGE_PIN A9 [get_ports uart_tx];
+set_property IOSTANDARD LVCMOS33 [get_ports uart_tx];
+
