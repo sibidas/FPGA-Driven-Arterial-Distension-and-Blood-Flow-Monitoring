@@ -1,0 +1,23 @@
+`timescale 1ns / 1ps
+module doppler_fft_mock(
+    input wire clk,
+    input wire rst,
+    input wire [15:0] signal_in,
+    output reg [15:0] freq_shift
+);
+
+    reg [15:0] delay1, delay2;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            delay1 <= 0;
+            delay2 <= 0;
+            freq_shift <= 0;
+        end else begin
+            delay1 <= signal_in;
+            delay2 <= delay1;
+            freq_shift <= signal_in - delay2; // Approximate differential change
+        end
+    end
+
+endmodule
