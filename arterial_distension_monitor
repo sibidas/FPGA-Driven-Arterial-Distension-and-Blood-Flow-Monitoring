@@ -1,0 +1,84 @@
+`timescale 1ns / 1ps
+module arterial_distension_monitor (
+    input wire clk,
+    input wire rst,
+    input wire [7:0] adc_data,
+    input wire uart_rx,
+    output reg uart_tx,
+    output reg arterial_flow_detected,
+    output reg distension_detected
+);
+
+// Parameters
+parameter FLOW_DELTA_THRESHOLD = 8'd10;
+parameter DIST_STATIC_THRESHOLD = 8'd130;
+parameter HOLD_COUNT_MAX = 32'd10_000_000; // ~100ms @ 100 MHz
+
+// Moving average filter
+reg [7:0] sample_0, sample_1, sample_2;
+reg [9:0] adc_avg;
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        sample_0 <= 0;
+        sample_1 <= 0;
+        sample_2 <= 0;
+        adc_avg <= 0;
+    end else begin
+        sample_2 <= sample_1;
+        sample_1 <= sample_0;
+        sample_0 <= adc_data;
+        adc_avg <= (sample_0 + sample_1 + sample_2) / 3;
+    end
+end
+
+// Delta (slope) computation
+reg [7:0] prev_adc;
+reg [7:0] delta;
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        prev_adc <= 0;
+        delta <= 0;
+    end else begin
+        delta <= (adc_avg > prev_adc) ? (adc_avg - prev_adc) : (prev_adc - adc_avg);
+        prev_adc <= adc_avg;
+    end
+end
+
+// Hold counters
+reg [31:0] flow_hold_cnt = 0;
+reg [31:0] dist_hold_cnt = 0;
+
+// Detection with hold logic
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        arterial_flow_detected <= 0;
+        distension_detected <= 0;
+        flow_hold_cnt <= 0;
+        dist_hold_cnt <= 0;
+        uart_tx <= 1'b1;
+    end else begin
+        // Arterial flow detection
+        if (delta > FLOW_DELTA_THRESHOLD) begin
+            arterial_flow_detected <= 1;
+            flow_hold_cnt <= 0;
+            uart_tx <= "F"; // send ASCII 'F'
+        end else if (flow_hold_cnt < HOLD_COUNT_MAX) begin
+            flow_hold_cnt <= flow_hold_cnt + 1;
+        end else begin
+            arterial_flow_detected <= 0;
+        end
+
+        // Arterial distension detection
+        if (adc_avg > DIST_STATIC_THRESHOLD) begin
+            distension_detected <= 1;
+            dist_hold_cnt <= 0;
+            uart_tx <= "D"; // send ASCII 'D'
+        end else if (dist_hold_cnt < HOLD_COUNT_MAX) begin
+            dist_hold_cnt <= dist_hold_cnt + 1;
+        end else begin
+            distension_detected <= 0;
+        end
+    end
+end
+
+endmodule
